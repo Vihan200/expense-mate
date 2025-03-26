@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import CreateGroup from './pages/CreateGroup';
 import GroupDetail from './pages/GroupDetail';
 import MyBudgetView from './pages/MyBudgetView';
+import LoginRegister from './pages/LoginRegister';
 
 function App() {
   // return (
@@ -32,6 +33,7 @@ function App() {
         <Route path="/create-group" element={<CreateGroup />} />
         <Route path="/group/:id" element={<GroupDetail />} /> 
         <Route path="/my-budget" element={<MyBudgetView />} />
+        <Route path="/login-register" element={<LoginRegister />} />
       </Routes>
     </Router>
   );

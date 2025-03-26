@@ -9,14 +9,16 @@ import {
   Menu,
   MenuItem,
   Box,
+  Button,
 } from '@mui/material';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import MenuIcon from '@mui/icons-material/Menu';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({ user }) => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const navigate = useNavigate();
 
-  // Mock notifications
   const notifications = [
     {
       id: 1,
@@ -43,6 +45,12 @@ const Navbar = ({ user }) => {
     setAnchorEl(null);
   };
 
+  const handleLogout = () => {
+    // Temporary hardcoded logout (simulate clearing auth)
+    alert('Logged out!');
+    navigate('/login-register'); // make sure this matches your route
+};
+
   return (
     <AppBar position="static">
       <Toolbar>
@@ -51,14 +59,12 @@ const Navbar = ({ user }) => {
           ExpenseMate
         </Typography>
 
-        {/* Notification Bell */}
         <IconButton color="inherit" onClick={handleOpen}>
           <Badge badgeContent={notifications.length} color="error">
             <NotificationsIcon />
           </Badge>
         </IconButton>
 
-        {/* Notification Dropdown Menu */}
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -81,6 +87,10 @@ const Navbar = ({ user }) => {
             ))
           )}
         </Menu>
+
+        <Button color="inherit" onClick={handleLogout} sx={{ ml: 2 }}>
+          Logout
+        </Button>
       </Toolbar>
     </AppBar>
   );
