@@ -10,16 +10,21 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 function GroupCard({ group, currentUser }) {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const isAdmin = group.admin_uid === currentUser.uid;
   const handleClick = () => {
     navigate(`/group/${group.id}`);
-};
-return (
+  };
+  return (
     <Card
       sx={{ borderRadius: 2, cursor: 'pointer', '&:hover': { boxShadow: 6 } }}
       onClick={handleClick}
     >
+      <img
+        src="https://www.stokedtotravel.com/wp-content/uploads/2019/06/IMG_6352-800x662.jpg"
+        alt="Google Icon"
+        style={{ width: "250px", height: "260px" }}
+      />
       <CardContent>
         <Stack spacing={1}>
           <Typography variant="h6">{group.name}</Typography>

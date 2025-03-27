@@ -35,32 +35,30 @@ function Dashboard() {
   const navigate = useNavigate();
   const [selectedMonth, setSelectedMonth] = useState('January');
   const [totalExpenses, setTotalExpenses] = useState(mockExpenses[selectedMonth]);
-  const [groups, setGroups] = useState([]); // State to hold fetched groups
-  const [loading, setLoading] = useState(true); // Loading state
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true); 
 
-  // Handle Month Change
   const handleMonthChange = (event) => {
     const month = event.target.value;
     setSelectedMonth(month);
-    setTotalExpenses(mockExpenses[month]); // Set total expenses based on selected month
+    setTotalExpenses(mockExpenses[month]); 
   };
 
-  // Fetch groups from the backend when the page is initialized
   useEffect(() => {
     const fetchGroups = async () => {
       console.log("feeee")
       try {
         const response = await axios.get('http://localhost:5000/api/groups');
-        setGroups(response.data); // Set the fetched groups
-        setLoading(false); // Stop loading
+        setGroups(response.data);
+        setLoading(false); 
       } catch (error) {
         console.error('Error fetching groups:', error);
         setLoading(false);
       }
     };
 
-    fetchGroups(); // This fetches groups as soon as the component is mounted
-  }, []); // Empty dependency array ensures this runs only once on initialization
+    fetchGroups(); 
+  }, []); 
 
   return (
     <>
@@ -82,9 +80,9 @@ function Dashboard() {
         </Stack>
 
         {/* 🔹 Personal Budget Widget (Card Style) */}
-        <Grid container spacing={3} mt={3}>
-          <Grid item xs={12} md={12} lg={12}>
-            <Card sx={{ borderRadius: '10px', boxShadow: 3 }}>
+        <Grid container spacing={3} mt={3} >
+        <Grid item xs={12} md={12} lg={12} sx={{ width: '100%' }}>
+        <Card  onClick={() => navigate('/my-budget')} sx={{ cursor: 'pointer', '&:hover': { boxShadow: 6 }, p: 1 }}>
               <CardContent>
                 <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
                   <Typography variant="h5">Personal Budget</Typography>
@@ -127,7 +125,7 @@ function Dashboard() {
             Loading groups...
           </Typography>
         ) : (
-          <Grid container spacing={3} mt={1}>
+          <Grid container spacing={6} mt={1}>
             {groups.map((group) => (
               <Grid item xs={12} sm={6} md={4} key={group._id}>
                 <GroupCard group={group} currentUser={User} />

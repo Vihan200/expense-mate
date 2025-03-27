@@ -15,7 +15,7 @@ import { ArrowBackIos } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom'; 
 const mockUser = { uid: 'abc123', name: 'Dul' };
 
-function CreateGroup() {
+function AddMembers() {
   const [groupName, setGroupName] = useState('');
   const [memberEmail, setMemberEmail] = useState('');
   const [members, setMembers] = useState([]);
@@ -29,8 +29,8 @@ function CreateGroup() {
   };
 
   const handleSubmit = () => {
-    if (!groupName || members.length === 0) {
-      alert('Please enter group name and add at least one member.');
+    if (members.length === 0) {
+      alert('add at least one member.');
       return;
     }
 
@@ -66,18 +66,18 @@ function CreateGroup() {
             <ArrowBackIos />
           </Button>
           <Typography variant="h5" gutterBottom>
-            Create New Group
+            Add Members
           </Typography>
         </Stack>
           
 
           <Stack spacing={3}>
-            <TextField
+            {/* <TextField
               label="Group Name"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               fullWidth
-            />
+            /> */}
 
             <Stack direction="row" spacing={2}>
               <TextField
@@ -87,9 +87,9 @@ function CreateGroup() {
                 fullWidth
                 placeholder='EX :- abc@gmail.com,123@gmail.com'
               />
-              <Button variant="contained" onClick={handleAddMember}>
+              {/* <Button variant="contained" onClick={handleAddMember}>
                 Add
-              </Button>
+              </Button> */}
             </Stack>
 
             <Box>
@@ -106,7 +106,7 @@ function CreateGroup() {
             </Box>
 
             <Button variant="contained" onClick={handleSubmit}>
-              Create Group
+              Add
             </Button>
           </Stack>
         </Paper>
@@ -115,4 +115,4 @@ function CreateGroup() {
   );
 }
 
-export default CreateGroup;
+export default AddMembers;
