@@ -46,7 +46,6 @@ function Dashboard() {
 
   useEffect(() => {
     const fetchGroups = async () => {
-      console.log("feeee")
       try {
         const response = await axios.get('http://localhost:5000/api/groups');
         setGroups(response.data);
@@ -127,6 +126,7 @@ function Dashboard() {
         ) : (
           <Grid container spacing={6} mt={1}>
             {groups.map((group) => (
+              
               <Grid item xs={12} sm={6} md={4} key={group._id}>
                 <GroupCard group={group} currentUser={User} />
               </Grid>

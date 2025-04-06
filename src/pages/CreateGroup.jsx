@@ -1,5 +1,7 @@
 
 import React, { useState } from 'react';
+import axios from 'axios';
+
 import {
   Container,
   TextField,
@@ -13,41 +15,51 @@ import {
 import Navbar from '../components/Navbar';
 import { ArrowBackIos } from '@mui/icons-material'; 
 import { useNavigate } from 'react-router-dom'; 
-const mockUser = { uid: 'abc123', name: 'Dul' };
+import { source } from '@cloudinary/url-gen/actions/overlay';
+const User = { uid: localStorage.getItem("email"), name: localStorage.getItem("displayName") };
 
 function CreateGroup() {
   const [groupName, setGroupName] = useState('');
-  const [memberEmail, setMemberEmail] = useState('');
-  const [members, setMembers] = useState([]);
+  // const [memberEmail, setMemberEmail] = useState('');
+  const [members, setMembers] = useState('');
   const navigate = useNavigate();
 
-  const handleAddMember = () => {
-    if (memberEmail && !members.includes(memberEmail)) {
-      setMembers([...members, memberEmail]);
-      setMemberEmail('');
-    }
-  };
+  // const handleAddMember = () => {
+  //   if (memberEmail && !members.includes(memberEmail)) {
+  //     setMembers([...members, memberEmail]);
+  //     setMemberEmail('');
+  //   }
+  // };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!groupName || members.length === 0) {
       alert('Please enter group name and add at least one member.');
       return;
     }
-
-    // TODO: Send to backend later
-    console.log('Creating Group:', {
-      groupName,
-      members,
-      createdBy: mockUser.uid,
-    });
-
-    alert('Group created successfully!');
-    // You can navigate to dashboard here
+    try {
+      // Prepare the data to send
+      const groupData = {
+        name: groupName,
+        member: members,
+        admin_uid: User.uid,
+      };
+      const response = await axios.post('http://localhost:5000/api/groups', groupData);
+  
+      if (response.status === 200) {
+        alert('Group created successfully!');
+        navigate('/dashboard'); 
+      } else {
+        alert('Failed to create group. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating group:', error);
+      alert('An error occurred. Please try again later.');
+    }
   };
 
   return (
     <>
-      <Navbar user={mockUser} />
+      <Navbar user={User} />
       <Container maxWidth="sm" sx={{ mt: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
         <Stack direction="row" alignItems="center" spacing={2} mb={3}>
@@ -82,17 +94,15 @@ function CreateGroup() {
             <Stack direction="row" spacing={2}>
               <TextField
                 label="Member Email"
-                value={memberEmail}
-                onChange={(e) => setMemberEmail(e.target.value)}
+                value={members}
+                onChange={(e) => setMembers(e.target.value)}
                 fullWidth
                 placeholder='EX :- abc@gmail.com,123@gmail.com'
               />
-              <Button variant="contained" onClick={handleAddMember}>
-                Add
-              </Button>
+        
             </Stack>
 
-            <Box>
+            {/* <Box>
               {members.map((email, index) => (
                 <Chip
                   key={index}
@@ -103,7 +113,7 @@ function CreateGroup() {
                   }
                 />
               ))}
-            </Box>
+            </Box> */}
 
             <Button variant="contained" onClick={handleSubmit}>
               Create Group

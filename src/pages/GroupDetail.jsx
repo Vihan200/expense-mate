@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Container,
@@ -10,11 +9,6 @@ import {
   TextField,
   Chip,
   Divider,
-  Stack,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
   List,
   ListItem,
   ListItemAvatar,
@@ -31,18 +25,29 @@ import {
   TableHead,
   TableRow,
   Card,
-  CardContent
+  CardContent,
+  IconButton,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel, Stack
 } from '@mui/material';
 import Navbar from '../components/Navbar';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import PaidIcon from '@mui/icons-material/Paid';
-import PersonIcon from '@mui/icons-material/Person';
-import AddIcon from '@mui/icons-material/Add';
-import { ArrowBackIos } from '@mui/icons-material'; 
-import { useNavigate } from 'react-router-dom'; 
+import {
+  AttachMoney,
+  Paid,
+  Person,
+  Add,
+  ArrowBackIos,
+  People,
+  AccountBalance,
+  Lock,
+  PersonAdd,
+  Receipt
+} from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 
-
-const mockUser = { uid: 'abc123', name: 'Dul' };
+const User = { uid: localStorage.getItem("email"), name: localStorage.getItem("displayName") };
 
 const mockGroup = {
   id: 'g1',
@@ -51,6 +56,12 @@ const mockGroup = {
   members: [
     { uid: 'abc123', name: 'Dul', email: 'dul@example.com' },
     { uid: 'def456', name: 'Vihan', email: 'vihan@example.com' },
+    { uid: 'def456', name: 'Vihan', email: 'vihan@example.com' },
+    { uid: 'def456', name: 'Vihan', email: 'vihan@example.com' },
+    { uid: 'def456', name: 'Vihan', email: 'vihan@example.com' },
+    { uid: 'def456', name: 'Vihan', email: 'vihan@example.com' },
+    { uid: 'def456', name: 'Vihan', email: 'vihan@example.com' },
+
   ],
   expenses: [
     {
@@ -77,9 +88,34 @@ const mockGroup = {
         { uid: 'def456', amount: 2000 },
       ],
     },
+    {
+      id: 'e2',
+      description: 'Lunch',
+      amount: 3000,
+      paidBy: 'def456',
+      splitType: 'custom',
+      date: '2025-03-26',
+      splitAmong: [
+        { uid: 'abc123', amount: 1000 },
+        { uid: 'def456', amount: 2000 },
+      ],
+    },
+    {
+      id: 'e2',
+      description: 'Lunch',
+      amount: 3000,
+      paidBy: 'def456',
+      splitType: 'custom',
+      date: '2025-03-26',
+      splitAmong: [
+        { uid: 'abc123', amount: 1000 },
+        { uid: 'def456', amount: 2000 },
+      ],
+    },
   ],
   isSettled: false,
 };
+
 
 function GroupDetail() {
   const navigate = useNavigate();
@@ -90,11 +126,11 @@ function GroupDetail() {
   const [paidBy, setPaidBy] = useState('');
   const [splitType, setSplitType] = useState('equal');
   const [participants, setParticipants] = useState([]);
-
   const [openAddMember, setOpenAddMember] = useState(false);
   const [openAddExpense, setOpenAddExpense] = useState(false);
-
-  const isAdmin = group.admin_uid === mockUser.uid;
+  const [addMember, setAddMember] = useState(false);
+  const [members, setMembers] = useState([]);
+  const isAdmin = group.admin_uid === User.uid;
 
   const handleAddMember = () => {
     if (newMemberEmail) {
@@ -136,168 +172,323 @@ function GroupDetail() {
     return paid - share;
   };
 
-  const currentUserBalance = calculateUserBalance(mockUser.uid);
+  const currentUserBalance = calculateUserBalance(User.uid);
   const totalGroupExpenses = group.expenses.reduce((sum, exp) => sum + exp.amount, 0);
   const memberCount = group.members.length;
 
   return (
     <>
-      <Navbar user={mockUser} />
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          {/* Header Section */}
-          <Stack direction="row" alignItems="center" spacing={2} mb={3}>
-            <Button
-              variant="text"
-              onClick={() => navigate("/dashboard")}
-              sx={{
-                minWidth: 'auto',
-                padding: 0,
-                color: 'primary.main',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                },
-              }}
-            >
-              <ArrowBackIos />
-            </Button>
-            <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
-              <Typography variant="h5">Group: {group.name}</Typography>
-              <Chip
-                label={
-                  currentUserBalance > 0
-                    ? `You are owed Rs. ${currentUserBalance}`
-                    : currentUserBalance < 0
-                    ? `You owe Rs. ${Math.abs(currentUserBalance)}`
-                    : 'All settled'
-                }
-                color={
-                  currentUserBalance > 0 ? 'success' : currentUserBalance < 0 ? 'error' : 'default'
-                }
-                sx={{ maxWidth: '250px' }}
-              />
-            </Box>
-          </Stack>
+      <Navbar user={User} />
+      <Container maxWidth="xl" sx={{ mt: 6, mb: 6 }}>
+        {/* Header Section */}
+        <Box sx={{ mb: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box display="flex" alignItems="center">
+            <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
+              <ArrowBackIos fontSize="small" />
+            </IconButton>
+            <Typography variant="h3" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
+              {group.name}
+            </Typography>
+          </Box>
+          <Chip
+            label={
+              currentUserBalance > 0
+                ? `You are owed Rs. ${currentUserBalance}`
+                : currentUserBalance < 0
+                  ? `You owe Rs. ${Math.abs(currentUserBalance)}`
+                  : 'All settled'
+            }
+            color={currentUserBalance > 0 ? 'success' : currentUserBalance < 0 ? 'error' : 'default'}
+            variant="outlined"
+            sx={{ px: 2, py: 1, fontSize: '0.875rem' }}
+          />
+        </Box>
 
-          <Typography variant="subtitle1" color="text.secondary" mt={1}>
-            Total Spent: Rs. {totalGroupExpenses} • Members: {memberCount}
-          </Typography>
+        {/* Summary Cards */}
+        <Grid container spacing={4} sx={{ marginBottom: '50px', paddingLeft: '300px'}}>
+          {[
+            {
+              icon: <AttachMoney fontSize="large" color="primary" />,
+              title: 'Total Spent',
+              value: `Rs. ${totalGroupExpenses.toLocaleString()}`
+            },
+            {
+              icon: <People fontSize="large" color="primary" />,
+              title: 'Members',
+              value: memberCount
+            },
+            {
+              icon: <AccountBalance fontSize="large" color="primary" />,
+              title: 'Your Balance',
+              value: `${currentUserBalance > 0 ? '+' : ''}Rs. ${Math.abs(currentUserBalance).toLocaleString()}`,
+              color: currentUserBalance > 0 ? 'success.main' : currentUserBalance < 0 ? 'error.main' : 'text.primary'
+            }
+          ].map((card, index) => (
+            <Grid item xs={12} md={3.9} key={index} sx={{ minWidth: '300px' , height: '150px' }}>
+              <Card variant="outlined" sx={{ p: 2, borderRadius: 4, boxShadow: 1, height: '100%' }}>
+                <CardContent>
+                  <Box display="flex" alignItems="center" mb={2}>
+                    {card.icon}
+                    <Typography variant="h6" color="text.secondary" sx={{ ml: 2 }}>
+                      {card.title}
+                    </Typography>
+                  </Box>
+                  <Typography
+                    variant="h3"
+                    sx={{
+                      fontWeight: 700,
+                      color: card.color || 'text.primary',
+                      textAlign: 'right'
+                    }}
+                  >
+                    {card.value}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
 
-          {/* Action Buttons */}
-          <Stack direction="row" spacing={2} mt={2}>
+        {/* Action Buttons */}
+        <Box sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          mb: 6,
+          '& .MuiButton-root': {
+            borderRadius: 3,
+            px: 4,
+            py: 1.5,
+            fontSize: '1rem',
+            textTransform: 'none',
+            boxShadow: 1,
+            '&:hover': { boxShadow: 2 }
+          }
+        }}>
+          <Box display="flex" gap={3}>
             {isAdmin && (
-              <Button variant="contained" color="success" onClick={finalizeGroup} sx={{ minWidth: 150 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={finalizeGroup}
+                startIcon={<Lock />}
+              >
                 Finalize Group
               </Button>
             )}
-            {isAdmin && (
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={() => setOpenAddMember(true)}
-                sx={{ minWidth: 150 }}
-              >
-                Add Member
-              </Button>
-            )}
             <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
+              variant="contained"
+              color="secondary"
               onClick={() => setOpenAddExpense(true)}
-              sx={{ minWidth: 150 }}
+              startIcon={<Add />}
             >
               Add Expense
             </Button>
-          </Stack>
+          </Box>
+          {isAdmin && (
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => setOpenAddMember(true)}
+              startIcon={<PersonAdd />}
+              sx={{ borderWidth: 2 }}
+            >
+              Add Member
+            </Button>
+          )}
+        </Box>
 
-          {/* Members List */}
-          <Typography variant="h6" mt={4}>Members</Typography>
-          <Stack direction="row" flexWrap="wrap" gap={1} mt={1}>
-            {group.members.map((member) => (
-              <Chip
-                key={member.uid}
-                icon={<PersonIcon />}
-                label={`${member.name} (${member.email})`}
-                sx={{ maxWidth: '300px' }}
-              />
-            ))}
-          </Stack>
-
-          {/* Grid Layout for Balances and Expenses */}
-          <Grid container spacing={3} mt={4}>
-            {/* Member Balances Card */}
-            <Grid item xs={12} md={6}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" mb={2}>Member Balances</Typography>
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Member</TableCell>
-                          <TableCell align="right">Balance</TableCell>
+        {/* Main Content */}
+        <Grid container spacing={6}>
+          {/* Balances Table */}
+          <Grid item xs={12} md={4} lg={4} sx={{ maxHeight: '500px' }}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 4, boxShadow: 1, height: '100%' }}>
+              <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
+                Member Balances
+              </Typography>
+              <TableContainer>
+                <Table sx={{ minWidth: 650 }}>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'background.default' }}>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '1rem', width: '70%' }}>Member</TableCell>
+                      {/* <TableCell sx={{ fontWeight: 700, fontSize: '1rem', width: '30%' }} align="right">Balance</TableCell> */}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody
+                    sx={{
+                      maxHeight: '400px',
+                      overflowY: 'auto',  // Enables vertical scrolling
+                      display: 'block',    // Makes sure it behaves like a block element to allow scrolling
+                      '&::-webkit-scrollbar': {
+                        display: 'none'   // Hides the scrollbar in Webkit-based browsers (Chrome, Safari)
+                      }
+                    }}
+                  >
+                    {group.members.map((m) => {
+                      const bal = calculateUserBalance(m.uid);
+                      return (
+                        <TableRow
+                          key={m.uid}
+                          hover
+                          sx={{
+                            '&:last-child td': { border: 0 },
+                            display: 'table',  // Ensure each row is treated as a table-row
+                            width: '100%'      // Ensure rows fill the table width
+                          }}
+                        >
+                          <TableCell>
+                            <Box display="flex" alignItems="center">
+                              <Avatar sx={{
+                                width: 40,
+                                height: 40,
+                                mr: 3,
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText'
+                              }}>
+                                {m.name[0]}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="subtitle1" fontWeight={600}>
+                                  {m.name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {m.email}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </TableCell>
+                          <TableCell
+                            align="right"
+                            sx={{
+                              fontSize: '1.1rem',
+                              fontWeight: 600,
+                              color: bal > 0 ? 'success.main' : 'error.main'
+                            }}
+                          >
+                            {bal > 0 ? '+' : ''}Rs. {Math.abs(bal).toLocaleString()}
+                          </TableCell>
                         </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {group.members.map((m) => {
-                          const bal = calculateUserBalance(m.uid);
-                          return (
-                            <TableRow key={m.uid}>
-                              <TableCell>{m.name}</TableCell>
-                              <TableCell align="right" style={{ color: bal > 0 ? 'green' : bal < 0 ? 'red' : 'gray' }}>
-                                {bal > 0 ? `+Rs. ${bal}` : bal < 0 ? `-Rs. ${Math.abs(bal)}` : 'Rs. 0'}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </CardContent>
-              </Card>
-            </Grid>
+                      );
+                    })}
+                  </TableBody>
 
-            {/* Expense History Card */}
-            <Grid item xs={12} md={6}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" mb={2}>Expense History</Typography>
-                  <List>
-                    {group.expenses.map((exp) => (
-                      <ListItem key={exp.id} sx={{ mb: 2, flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <Stack direction="row" alignItems="center" spacing={2}>
-                          <Avatar>
-                            <AttachMoneyIcon />
-                          </Avatar>
-                          <Box>
-                            <Typography variant="subtitle1">
-                              {exp.description} - Rs. {exp.amount}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Paid by {getMemberName(exp.paidBy)} • {exp.splitType} split • {exp.date}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                        <Stack direction="row" spacing={1} mt={1} flexWrap="wrap">
-                          {exp.splitAmong.map((s) => (
-                            <Chip
-                              key={s.uid}
-                              icon={<PaidIcon fontSize="small" />}
-                              label={`${getMemberName(s.uid)}: Rs. ${s.amount}`}
-                              variant="outlined"
-                              size="small"
-                            />
-                          ))}
-                        </Stack>
-                      </ListItem>
-                    ))}
-                  </List>
-                </CardContent>
-              </Card>
-            </Grid>
+                </Table>
+              </TableContainer>
+            </Paper>
           </Grid>
+
+          {/* Expense List */}
+          <Grid item xs={12} md={6} lg={6} sx={{ maxHeight: '600px' }}>
+            <Paper variant="outlined" sx={{ borderRadius: 4, boxShadow: 1, height: '100%' }}>
+              <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, width: '650px' }}>
+                  Recent Expenses
+                </Typography>
+              </Box>
+              <List sx={{
+                      maxHeight: '450px',
+                      overflowY: 'auto',  // Enables vertical scrolling
+                      display: 'block',    // Makes sure it behaves like a block element to allow scrolling
+                      '&::-webkit-scrollbar': {
+                        display: 'none'   // Hides the scrollbar in Webkit-based browsers (Chrome, Safari)
+                      }
+                    }}>
+                {group.expenses.map((exp) => (
+                  <React.Fragment key={exp.id}>
+                    <ListItem
+                      sx={{
+                        px: 3,
+                        py: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        '&:hover': { bgcolor: 'action.hover' }
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                        <ListItemAvatar>
+                          <Avatar sx={{
+                            bgcolor: 'secondary.main',
+                            width: 48,
+                            height: 48,
+                            mr: 2
+                          }}>
+                            <Receipt fontSize="medium" />
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <Typography variant="subtitle1" fontWeight={600}>
+                              {exp.description}
+                            </Typography>
+                          }
+                          secondary={
+                            <>
+                              <Typography variant="body2" color="text.secondary" mt={1}>
+                                Paid by {getMemberName(exp.paidBy)} • {new Date(exp.date).toLocaleDateString()}
+                              </Typography>
+                              <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                {exp.splitAmong.map((s) => (
+                                  <Chip
+                                    key={s.uid}
+                                    size="medium"
+                                    label={`${getMemberName(s.uid)}: Rs.${s.amount.toLocaleString()}`}
+                                    variant="outlined"
+                                    color="primary"
+                                    sx={{ borderRadius: 2, py: 1 }}
+                                  />
+                                ))}
+                              </Box>
+                            </>
+                          }
+                        />
+                      </Box>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          minWidth: 120,
+                          textAlign: 'right',
+                          fontWeight: 700,
+                          color: 'primary.main'
+                        }}
+                      >
+                        Rs.{exp.amount.toLocaleString()}
+                      </Typography>
+                    </ListItem>
+                    <Divider component="li" sx={{ my: 1 }} />
+                  </React.Fragment>
+                ))}
+              </List>
+            </Paper>
+          </Grid>
+        </Grid>
+
+        {/* Dialogs remain the same as previous version */}
+      </Container>
+      <Dialog open={addMember} onClose={() => setAddMember(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Add Members</DialogTitle>
+          <DialogContent>
+          <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Paper elevation={3} sx={{ p: 4 }}>
+       
+        
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Member Email"
+                value={members}
+                onChange={(e) => setMembers(e.target.value)}
+                fullWidth
+                placeholder='EX :- abc@gmail.com,123@gmail.com'
+              />
+        
+            </Stack>
+
         </Paper>
       </Container>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setAddMember(false)}>Cancel</Button>
+            {/* <Button onClick={handleAddIncome} variant="contained">Add</Button> */}
+          </DialogActions>
+        </Dialog>
     </>
   );
 }
