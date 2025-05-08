@@ -157,8 +157,10 @@ function GroupDetail() {
         // Keep the expenses as they are, or overwrite if needed
         setGroup({
           ...response.data,
-          members: normalizedMembers
+          members: normalizedMembers,
+          expenses: response.data.expenses || [] // Ensure expenses is an array
         });
+
       } catch (error) {
         console.error('Error fetching group:', error);
       }
@@ -173,7 +175,7 @@ function GroupDetail() {
 
   const handleAddExpense = async () => {
     let splitAmong = [];
-  
+
     if (splitType === "equal") {
       const eachShare = parseFloat(amount) / group.members.length;
       splitAmong = group.members.map((member) => ({
@@ -183,17 +185,17 @@ function GroupDetail() {
     } else if (splitType === "exact") {
       splitAmong = participants;
     }
-  
-     // ✅ Validate total split equals main amount
-  const totalSplit = splitAmong.reduce((sum, entry) => sum + entry.amount, 0);
-  const expectedAmount = parseFloat(amount);
 
-  // Allow a small rounding tolerance for equal splits
-  if (Math.abs(totalSplit - expectedAmount) > 0.01) {
-    alert(`Split total (Rs. ${totalSplit.toFixed(2)}) does not match the total amount (Rs. ${expectedAmount.toFixed(2)}). Please correct the values.`);
-    return;
-  }
-    
+    // ✅ Validate total split equals main amount
+    const totalSplit = splitAmong.reduce((sum, entry) => sum + entry.amount, 0);
+    const expectedAmount = parseFloat(amount);
+
+    // Allow a small rounding tolerance for equal splits
+    if (Math.abs(totalSplit - expectedAmount) > 0.01) {
+      alert(`Split total (Rs. ${totalSplit.toFixed(2)}) does not match the total amount (Rs. ${expectedAmount.toFixed(2)}). Please correct the values.`);
+      return;
+    }
+
     const expense = {
       id: `exp-${Date.now()}`, // or let backend generate ID
       description,
@@ -202,9 +204,9 @@ function GroupDetail() {
       date: new Date().toISOString(), // or use a selected date if you add it
       splitAmong
     };
-  
+
     console.log('Posting expense object:', expense);
-  
+
     try {
       await axios.post(`http://localhost:5000/api/groups/${id}/expenses`, expense);
       alert('Expense added successfully!');
@@ -213,16 +215,16 @@ function GroupDetail() {
       console.error('Error posting expense:', error);
       alert('Failed to add expense.');
     }
-  
+
     // Cleanup
     setDescription('');
     setAmount('');
     setPaidBy('');
     setParticipants([]);
     setOpenAddExpense(false);
-    navigate(0); 
+    navigate(0);
   };
-  
+
 
   const finalizeGroup = () => {
     alert('Group finalized! Balances are now locked.');
@@ -234,6 +236,8 @@ function GroupDetail() {
   };
 
   const calculateUserBalance = (uid) => {
+    if (!group.expenses) return 0;
+
     let paid = 0;
     let share = 0;
 
@@ -399,7 +403,7 @@ function GroupDetail() {
                     }}
                   >
                     {group.members.map((m) => {
-                      const bal = calculateUserBalance(m.uid);
+                      const bal = group.expenses?.length ? calculateUserBalance(m.uid) : 0;
                       return (
                         <TableRow
                           key={m.uid}
@@ -467,70 +471,80 @@ function GroupDetail() {
                   display: 'none'   // Hides the scrollbar in Webkit-based browsers (Chrome, Safari)
                 }
               }}>
-                {group.expenses.map((exp) => (
-                  <React.Fragment key={exp.id}>
-                    <ListItem
-                      sx={{
-                        px: 3,
-                        py: 1,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        '&:hover': { bgcolor: 'action.hover' }
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                        <ListItemAvatar>
-                          <Avatar sx={{
-                            bgcolor: 'secondary.main',
-                            width: 48,
-                            height: 48,
-                            mr: 2
-                          }}>
-                            <Receipt fontSize="medium" />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography variant="subtitle1" fontWeight={600}>
-                              {exp.description}
-                            </Typography>
-                          }
-                          secondary={
-                            <>
-                              <Typography variant="body2" color="text.secondary" mt={1}>
-                                Paid by {getMemberName(exp.paidBy)} • {new Date(exp.date).toLocaleDateString()}
-                              </Typography>
-                              <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                {exp.splitAmong.map((s) => (
-                                  <Chip
-                                    key={s.uid}
-                                    size="medium"
-                                    label={`${getMemberName(s.uid)}: Rs.${s.amount.toLocaleString()}`}
-                                    variant="outlined"
-                                    color="primary"
-                                    sx={{ borderRadius: 2, py: 1 }}
-                                  />
-                                ))}
-                              </Box>
-                            </>
-                          }
-                        />
-                      </Box>
-                      <Typography
-                        variant="h6"
+                {group.expenses.length === 0 ? (
+                  <Box textAlign="center" py={4}>
+                    <Typography variant="body1" color="text.secondary">
+                      No expenses recorded yet.
+                    </Typography>
+                  </Box>
+                ) : (
+                  group.expenses.map((exp) => (
+                    <React.Fragment key={exp.id}>
+                      <ListItem
                         sx={{
-                          minWidth: 120,
-                          textAlign: 'right',
-                          fontWeight: 700,
-                          color: 'primary.main'
+                          px: 3,
+                          py: 1,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          '&:hover': { bgcolor: 'action.hover' }
                         }}
                       >
-                        Rs.{exp.amount.toLocaleString()}
-                      </Typography>
-                    </ListItem>
-                    <Divider component="li" sx={{ my: 1 }} />
-                  </React.Fragment>
-                ))}
+                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                          <ListItemAvatar>
+                            <Avatar sx={{
+                              bgcolor: 'secondary.main',
+                              width: 48,
+                              height: 48,
+                              mr: 2
+                            }}>
+                              <Receipt fontSize="medium" />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography variant="subtitle1" fontWeight={600}>
+                                {exp.description}
+                              </Typography>
+                            }
+                            secondary={
+                              <>
+                                <Typography variant="body2" color="text.secondary" mt={1}>
+                                  Paid by {getMemberName(exp.paidBy)} • {new Date(exp.date).toLocaleDateString()}
+                                </Typography>
+                                <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                  {exp.splitAmong.map((s) => (
+                                    <Chip
+                                      key={s.uid}
+                                      size="medium"
+                                      label={`${getMemberName(s.uid)}: Rs.${s.amount.toLocaleString()}`}
+                                      variant="outlined"
+                                      color="primary"
+                                      sx={{ borderRadius: 2, py: 1 }}
+                                    />
+                                  ))}
+                                </Box>
+                              </>
+                            }
+                          />
+                        </Box>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            minWidth: 120,
+                            textAlign: 'right',
+                            fontWeight: 700,
+                            color: 'primary.main'
+                          }}
+                        >
+                          Rs.{exp.amount.toLocaleString()}
+                        </Typography>
+                      </ListItem>
+                      <Divider component="li" sx={{ my: 1 }} />
+                    </React.Fragment>
+                  ))
+                )}
+
+
               </List>
             </Paper>
           </Grid>
@@ -565,118 +579,118 @@ function GroupDetail() {
         </DialogActions>
       </Dialog>
       <Dialog open={openAddExpense} onClose={() => setOpenAddExpense(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 4, p: 2 } }}>
-  <DialogTitle sx={{ fontWeight: 700, fontSize: '1.5rem', pb: 0 }}>
-    Add New Expense
-  </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.5rem', pb: 0 }}>
+          Add New Expense
+        </DialogTitle>
 
-  <DialogContent sx={{ mt: 1 }}>
-    <Stack spacing={3} mt={1}>
-      <TextField
-        label="Expense Description"
-        variant="outlined"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        fullWidth
-      />
+        <DialogContent sx={{ mt: 1 }}>
+          <Stack spacing={3} mt={1}>
+            <TextField
+              label="Expense Description"
+              variant="outlined"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              fullWidth
+            />
 
-      <TextField
-        label="Total Amount (Rs.)"
-        type="number"
-        variant="outlined"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        fullWidth
-      />
+            <TextField
+              label="Total Amount (Rs.)"
+              type="number"
+              variant="outlined"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              fullWidth
+            />
 
-      <FormControl fullWidth>
-        <InputLabel>Paid By</InputLabel>
-        <Select
-          value={paidBy}
-          onChange={(e) => setPaidBy(e.target.value)}
-          label="Paid By"
-        >
-          {group.members.map((member) => (
-            <MenuItem key={member.uid} value={member.uid}>
-              {member.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Paid By</InputLabel>
+              <Select
+                value={paidBy}
+                onChange={(e) => setPaidBy(e.target.value)}
+                label="Paid By"
+              >
+                {group.members.map((member) => (
+                  <MenuItem key={member.uid} value={member.uid}>
+                    {member.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-      <TextField
-        label="Date of Expense"
-        type="date"
-        fullWidth
-        value={group.date || new Date().toISOString().split("T")[0]}
-        onChange={(e) => setGroup((prev) => ({ ...prev, date: e.target.value }))}
-        InputLabelProps={{ shrink: true }}
-      />
+            <TextField
+              label="Date of Expense"
+              type="date"
+              fullWidth
+              value={group.date || new Date().toISOString().split("T")[0]}
+              onChange={(e) => setGroup((prev) => ({ ...prev, date: e.target.value }))}
+              InputLabelProps={{ shrink: true }}
+            />
 
-      <FormControl fullWidth>
-        <InputLabel>Split Type</InputLabel>
-        <Select
-          value={splitType}
-          onChange={(e) => setSplitType(e.target.value)}
-          label="Split Type"
-        >
-          <MenuItem value="equal">Equally</MenuItem>
-          <MenuItem value="exact">Exact Amount</MenuItem>
-        </Select>
-      </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Split Type</InputLabel>
+              <Select
+                value={splitType}
+                onChange={(e) => setSplitType(e.target.value)}
+                label="Split Type"
+              >
+                <MenuItem value="equal">Equally</MenuItem>
+                <MenuItem value="exact">Exact Amount</MenuItem>
+              </Select>
+            </FormControl>
 
-      <Box>
-        <Typography variant="subtitle1" fontWeight={600} mb={1}>
-          Split Among
-        </Typography>
-        <Stack spacing={1}>
-          {group.members.map((member) => (
-            <Box
-              key={member.uid}
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              px={2}
-              py={1}
-              sx={{ borderRadius: 2, bgcolor: 'grey.100' }}
-            >
-              <Typography sx={{ fontWeight: 500 }}>{member.name}</Typography>
-              {splitType === 'equal' ? (
-                <Typography color="primary" fontWeight={600}>
-                  Rs. {(amount && !isNaN(amount)) ? (parseFloat(amount) / group.members.length).toFixed(2) : '0.00'}
-                </Typography>
-              ) : (
-                <TextField
-                  size="small"
-                  type="number"
-                  label="Amount"
-                  sx={{ width: 120 }}
-                  onChange={(e) => {
-                    const updated = participants.filter(p => p.uid !== member.uid);
-                    updated.push({
-                      uid: member.uid,
-                      amount: parseFloat(e.target.value) || 0,
-                    });
-                    setParticipants(updated);
-                  }}
-                />
-              )}
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                Split Among
+              </Typography>
+              <Stack spacing={1}>
+                {group.members.map((member) => (
+                  <Box
+                    key={member.uid}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    px={2}
+                    py={1}
+                    sx={{ borderRadius: 2, bgcolor: 'grey.100' }}
+                  >
+                    <Typography sx={{ fontWeight: 500 }}>{member.name}</Typography>
+                    {splitType === 'equal' ? (
+                      <Typography color="primary" fontWeight={600}>
+                        Rs. {(amount && !isNaN(amount)) ? (parseFloat(amount) / group.members.length).toFixed(2) : '0.00'}
+                      </Typography>
+                    ) : (
+                      <TextField
+                        size="small"
+                        type="number"
+                        label="Amount"
+                        sx={{ width: 120 }}
+                        onChange={(e) => {
+                          const updated = participants.filter(p => p.uid !== member.uid);
+                          updated.push({
+                            uid: member.uid,
+                            amount: parseFloat(e.target.value) || 0,
+                          });
+                          setParticipants(updated);
+                        }}
+                      />
+                    )}
+                  </Box>
+                ))}
+              </Stack>
             </Box>
-          ))}
-        </Stack>
-      </Box>
-    </Stack>
-  </DialogContent>
+          </Stack>
+        </DialogContent>
 
-  <DialogActions sx={{ mt: 2, px: 3, pb: 2 }}>
-    <Button onClick={() => setOpenAddExpense(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2 }}>
-      Cancel
-    </Button>
-    <Button onClick={handleAddExpense} variant="contained" color="primary" sx={{ borderRadius: 2 }}>
-      Add Expense
-    </Button>
-  </DialogActions>
-  
-</Dialog>
+        <DialogActions sx={{ mt: 2, px: 3, pb: 2 }}>
+          <Button onClick={() => setOpenAddExpense(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2 }}>
+            Cancel
+          </Button>
+          <Button onClick={handleAddExpense} variant="contained" color="primary" sx={{ borderRadius: 2 }}>
+            Add Expense
+          </Button>
+        </DialogActions>
+
+      </Dialog>
 
 
     </>
