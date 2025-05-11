@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -18,34 +18,59 @@ import {
   DoneAll as DoneAllIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useNotifications } from '../NotificationContext';
 
 const Navbar = ({ user }) => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'New Message',
-      message: 'You received a new message from John Doe',
-      time: new Date(),
-      unread: true
-    },
-    {
-      id: 2,
-      title: 'Payment Received',
-      message: 'Invoice #1234 has been paid',
-      time: new Date(Date.now() - 86400000), // 1 day ago
-      unread: false
-    }
-  ]);
+  const { notifications, clearNotifications, setNotifications } = useNotifications();
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  // Update current time every minute to refresh notification timestamps
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Sort notifications by time (newest first)
+  notifications.sort((a, b) => {
+    const timeA = new Date(a.timestamp || a.time || new Date()).getTime();
+    const timeB = new Date(b.timestamp || b.time || new Date()).getTime();
+    return timeB - timeA;
+  });
+  
+  const unreadCount = notifications.filter(n => n.unread !== false).length;
+
+  const formatNotificationTime = (notification, index) => {
+    const timestamp = notification.timestamp || notification.time;
+    if (!timestamp) return 'Some time ago';
+    
+    const notificationDate = new Date(timestamp);
+    if (isNaN(notificationDate.getTime())) return 'Some time ago';
+    
+    const diffInSeconds = Math.floor((currentTime - notificationDate) / 1000);
+    
+    // Only the newest notification (index 0) can be "Just now"
+    if (index === 0 && diffInSeconds < 60) return 'Just now';
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
+    return notificationDate.toLocaleDateString(); // For older than 7 days, show date
+  };
 
   const handleMarkAsRead = (id) => {
     setNotifications(prevNotifications => 
       prevNotifications.map(n => 
-        n.id === id ? { ...n, unread: !n.unread } : n
+        n.id === id ? { ...n, unread: false } : n
       )
     );
   };
@@ -54,20 +79,6 @@ const Navbar = ({ user }) => {
     setNotifications(prevNotifications =>
       prevNotifications.map(n => ({ ...n, unread: false }))
     );
-  };
-
-  const formatNotificationTime = (date) => {
-    const now = new Date();
-    const diff = now - new Date(date);
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (minutes < 1) return 'Just now';
-    if (hours < 1) return `${minutes}m ago`;
-    if (days < 1) return `${hours}h ago`;
-    if (days === 1) return 'Yesterday';
-    return `${days}d ago`;
   };
 
   const handleOpen = (event) => {
@@ -108,9 +119,9 @@ const Navbar = ({ user }) => {
           PaperProps={{
             sx: {
               width: 360,
-              maxHeight: 500,
               borderRadius: 2,
-              boxShadow: '0px 4px 20px rgba(0,0,0,0.15)'
+              boxShadow: '0px 4px 20px rgba(0,0,0,0.15)',
+              overflow: 'hidden'
             }
           }}
         >
@@ -127,73 +138,93 @@ const Navbar = ({ user }) => {
               </Typography>
             </Box>
           ) : (
-            <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-              {notifications.map((notification) => (
-                <MenuItem 
-                  key={notification.id} 
-                  sx={{
-                    py: 1.5,
-                    px: 2,
-                    borderLeft: notification.unread ? '3px solid' : '3px solid transparent',
-                    borderLeftColor: notification.unread ? 'primary.main' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'action.hover'
-                    }
-                  }}
-                >
-                  <Box sx={{ flexGrow: 1, mr: 2 }}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box sx={{ 
+              maxHeight: 400, 
+              overflow: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '0.4em'
+              },
+              '&::-webkit-scrollbar-track': {
+                boxShadow: 'inset 0 0 6px rgba(0,0,0,0.00)',
+                webkitBoxShadow: 'inset 0 0 6px rgba(0,0,0,0.00)'
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: 'rgba(0,0,0,.1)',
+                outline: '1px solid slategrey'
+              }
+            }}>
+              {notifications.map((notification, index) => {
+                const title = notification.notification?.title || notification.title || 'Notification';
+                const message = notification.notification?.body || '';
+                const unread = notification.unread !== false;
+                
+                return (
+                  <MenuItem 
+                    key={notification.id || index}
+                    sx={{
+                      py: 1.5,
+                      px: 2,
+                      borderLeft: unread ? '3px solid' : '3px solid transparent',
+                      borderLeftColor: unread ? 'primary.main' : 'transparent',
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <Box sx={{ flexGrow: 1, mr: 2 }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography 
+                          variant="subtitle2" 
+                          fontWeight={unread ? 600 : 400}
+                          color={unread ? 'text.primary' : 'text.secondary'}
+                        >
+                          {title}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkAsRead(notification.id);
+                          }}
+                          sx={{
+                            color: 'text.secondary',
+                            '&:hover': {
+                              color: 'primary.main',
+                              backgroundColor: 'transparent'
+                            }
+                          }}
+                        >
+                          {unread ? (
+                            <MarkAsUnreadIcon fontSize="small" />
+                          ) : (
+                            <MarkAsReadIcon fontSize="small" />
+                          )}
+                        </IconButton>
+                      </Box>
                       <Typography 
-                        variant="subtitle2" 
-                        fontWeight={notification.unread ? 600 : 400}
-                        color={notification.unread ? 'text.primary' : 'text.secondary'}
+                        variant="body2" 
+                        sx={{ 
+                          mt: 0.5,
+                          color: unread ? 'text.primary' : 'text.secondary'
+                        }}
                       >
-                        {notification.title}
+                        {message}
                       </Typography>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkAsRead(notification.id);
-                        }}
-                        sx={{
+                      <Typography 
+                        variant="caption" 
+                        display="block" 
+                        sx={{ 
+                          mt: 1,
                           color: 'text.secondary',
-                          '&:hover': {
-                            color: 'primary.main',
-                            backgroundColor: 'transparent'
-                          }
+                          fontSize: '0.75rem'
                         }}
                       >
-                        {notification.unread ? (
-                          <MarkAsUnreadIcon fontSize="small" />
-                        ) : (
-                          <MarkAsReadIcon fontSize="small" />
-                        )}
-                      </IconButton>
+                        {formatNotificationTime(notification, index)}
+                      </Typography>
                     </Box>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        mt: 0.5,
-                        color: notification.unread ? 'text.primary' : 'text.secondary'
-                      }}
-                    >
-                      {notification.message}
-                    </Typography>
-                    <Typography 
-                      variant="caption" 
-                      display="block" 
-                      sx={{ 
-                        mt: 1,
-                        color: 'text.secondary',
-                        fontSize: '0.75rem'
-                      }}
-                    >
-                      {formatNotificationTime(notification.time)}
-                    </Typography>
-                  </Box>
-                </MenuItem>
-              ))}
+                  </MenuItem>
+                );
+              })}
             </Box>
           )}
 
@@ -206,6 +237,13 @@ const Navbar = ({ user }) => {
                 sx={{ color: 'text.secondary' }}
               >
                 Mark all as read
+              </Button>
+              <Button 
+                size="small" 
+                onClick={clearNotifications}
+                sx={{ color: 'text.secondary', ml: 1 }}
+              >
+                Clear all
               </Button>
             </Box>
           )}
