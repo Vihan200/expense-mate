@@ -71,6 +71,29 @@ function GroupCard({ group, currentUser }) {
     }
   };
 
+    const User = {
+    uid: localStorage.getItem("email"),
+    name: localStorage.getItem("displayName"),
+  };
+
+  const calculateUserBalance = (uid) => {
+    if (!group.expenses) return 0;
+
+    let paid = 0;
+    let share = 0;
+
+    group.expenses.forEach((exp) => {
+      if (exp.paidBy === uid) paid += exp.amount;
+      exp.splitAmong.forEach((s) => {
+        if (s.uid === uid) share += s.amount;
+      });
+    });
+
+    return paid - share;
+  };
+
+  const currentUserBalance = calculateUserBalance(User.uid);
+
   return (
     <Card sx={{
       borderRadius: 2,
@@ -167,12 +190,12 @@ function GroupCard({ group, currentUser }) {
             variant="body1"
             sx={{
               fontWeight: 600,
-              color: group.balance > 0 ? 'success.main' : 'error.main'
+              color: currentUserBalance > 0 ? 'success.main' : 'error.main'
             }}
           >
-            {group.balance > 0
-              ? `You are owed Rs. ${group.balance}`
-              : `You owe Rs. ${Math.abs(group.balance)}`}
+            {currentUserBalance > 0
+              ? `You are owed Rs. ${currentUserBalance}`
+              : `You owe Rs. ${Math.abs(currentUserBalance)}`}
           </Typography>
         </Stack>
       </CardContent>
