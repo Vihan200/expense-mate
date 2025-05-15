@@ -27,7 +27,7 @@ function MyBudgetView() {
   useEffect(() => {
     const fetchBudgets = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/budget/user/${User.uid}`);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/budget/user/${User.uid}`);
         const allBudgets = response.data;
 
         setIncomes(allBudgets.filter(entry => entry.type === '+'));
@@ -80,7 +80,7 @@ function MyBudgetView() {
 
   const handleSubmit = async (form, type, setter) => {
     try {
-      const response = await axios.post(`${process.env.api_url}/api/budget`, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/budget`, {
         ...form,
         user: User.uid,
         type

@@ -43,7 +43,7 @@ function CreateGroup() {
         member: members,
         admin_uid: User.uid,
       };
-      const response = await axios.post(`${process.env.api_url}/api/groups`, groupData);
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/groups`, groupData);
   
       if (response.status === 200) {
         alert('Group created successfully!');

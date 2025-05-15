@@ -149,7 +149,7 @@ function GroupDetail() {
   useEffect(() => {
     const fetchGroupDetails = async () => {
       try {
-        const response = await axios.get(`${process.env.api_url}/api/groups/${id}`);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/groups/${id}`);
 
         // Normalize members into objects with uid, name, email
         const normalizedMembers = response.data.members.map((email) => ({
@@ -212,7 +212,7 @@ function GroupDetail() {
     console.log('Posting expense object:', expense);
 
     try {
-      await axios.post(`${process.env.api_url}/api/groups/${id}/expenses`, expense);
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/groups/${id}/expenses`, expense);
       alert('Expense added successfully!');
       group.members.forEach(member => {
         const isPayer = member.uid === paidBy;

@@ -6,7 +6,7 @@ import { generateToken } from '../firebase-config';
 
 function Login() {
   const navigate = useNavigate();
-
+  const apiUrl = process.env.REACT_APP_API_URL;
   const handleGoogleLogin = async () => {
     try {
       // Set prompt to 'select_account' to show the Gmail selection screen
@@ -22,7 +22,7 @@ function Login() {
 
       // Send token to the backend for verification
       const response = await axios.post(
-        `${process.env.api_url}/api/verify-token`,
+        `${apiUrl}/api/verify-token`,
         { token }
       );
 

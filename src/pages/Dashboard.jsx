@@ -48,7 +48,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const response = await axios.get(`${process.env.api_url}/api/groups`);
+        const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/groups`);
         setGroups(response.data);
         setLoading(false); 
       } catch (error) {
