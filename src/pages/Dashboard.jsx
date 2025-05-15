@@ -13,6 +13,7 @@ import {
   Box,
   Card,
   CardContent,
+  Divider,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
@@ -47,7 +48,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/groups');
+        const response = await axios.get(`${process.env.api_url}/api/groups`);
         setGroups(response.data);
         setLoading(false); 
       } catch (error) {
@@ -79,40 +80,69 @@ function Dashboard() {
         </Stack>
 
         {/* 🔹 Personal Budget Widget (Card Style) */}
-        <Grid container spacing={3} mt={3} >
-        <Grid item xs={12} md={12} lg={12} sx={{ width: '100%' }}>
-        <Card  onClick={() => navigate('/my-budget')} sx={{ cursor: 'pointer', '&:hover': { boxShadow: 6 }, p: 1 }}>
-              <CardContent>
-                <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-                  <Typography variant="h5">Personal Budget</Typography>
+     <Grid container spacing={3} mt={3} justifyContent="center">
+  <Grid item xs={12} md={10} lg={8}>
+    <Card
+      onClick={() => navigate('/my-budget')}
+      sx={{
+        cursor: 'pointer',
+        '&:hover': { boxShadow: 8 },
+        p: 2,
+        borderRadius: 4,
+        transition: '0.3s ease-in-out',
+        backgroundColor: 'background.paper',
+        boxShadow: 3
+      }}
+    >
+      <CardContent>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={3}
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          justifyContent="space-between"
+        >
+          <Box>
+            <Typography variant="h5" fontWeight={700}>
+              Personal Budget Overview
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Click to view detailed analysis and history
+            </Typography>
+          </Box>
 
-                  {/* Month Selector */}
-                  <FormControl variant="outlined" sx={{ minWidth: 200 }}>
-                    <InputLabel>Month</InputLabel>
-                    <Select
-                      value={selectedMonth}
-                      onChange={handleMonthChange}
-                      label="Month"
-                    >
-                      {Object.keys(mockExpenses).map((month) => (
-                        <MenuItem key={month} value={month}>
-                          {month}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Stack>
+          {/* Month Selector */}
+          <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>Month</InputLabel>
+            <Select
+              value={selectedMonth}
+              onChange={handleMonthChange}
+              label="Month"
+            >
+              {Object.keys(mockExpenses).map((month) => (
+                <MenuItem key={month} value={month}>
+                  {month}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
 
-                {/* Total Expenses for Selected Month */}
-                <Box mt={2}>
-                  <Typography variant="h6">
-                    Total Expenses for {selectedMonth}: Rs. {totalExpenses}
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
+        <Divider sx={{ my: 3 }} />
+
+        {/* Total Expenses */}
+        <Box textAlign="right">
+          <Typography variant="subtitle2" color="text.secondary">
+            Total Expenses in {selectedMonth}
+          </Typography>
+          <Typography variant="h4" fontWeight={700} color="error.main">
+            Rs. {totalExpenses.toLocaleString()}
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  </Grid>
+</Grid>
+
 
         {/* 🔹 Group Cards */}
         <Typography variant="h5" mt={5}>

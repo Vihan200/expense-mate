@@ -16,7 +16,7 @@ function App() {
     try {
       const token = localStorage.getItem('fcmtoken');
       const response = await axios.post(
-        "http://localhost:5000/api/notifications/store-token",
+        `${process.env.api_url}/api/notifications/store-token`,
         { token }
       );
     } catch (error) {

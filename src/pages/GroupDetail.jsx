@@ -48,6 +48,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import { useNotifications } from '../NotificationContext'; // adjust path as needed
+
 
 const User = { uid: localStorage.getItem("email"), name: localStorage.getItem("displayName") };
 
@@ -132,6 +134,8 @@ function GroupDetail() {
   const [openAddExpense, setOpenAddExpense] = useState(false);
   const [addMember, setAddMember] = useState(false);
   const [members, setMembers] = useState([]);
+  const { addNotification } = useNotifications();
+
   // const isAdmin = group.admin_uid === User.uid;
 
   const handleAddMember = () => {
@@ -145,7 +149,7 @@ function GroupDetail() {
   useEffect(() => {
     const fetchGroupDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/groups/${id}`);
+        const response = await axios.get(`${process.env.api_url}/api/groups/${id}`);
 
         // Normalize members into objects with uid, name, email
         const normalizedMembers = response.data.members.map((email) => ({
@@ -208,9 +212,25 @@ function GroupDetail() {
     console.log('Posting expense object:', expense);
 
     try {
-      await axios.post(`http://localhost:5000/api/groups/${id}/expenses`, expense);
+      await axios.post(`${process.env.api_url}/api/groups/${id}/expenses`, expense);
       alert('Expense added successfully!');
-      // Optional: Refresh group data
+      group.members.forEach(member => {
+        const isPayer = member.uid === paidBy;
+        const userIsCurrent = member.uid === User.uid;
+        const title = `${getMemberName(paidBy)} added a new expense`;
+        const message = `${description} of Rs.${parseFloat(amount).toFixed(2)} was added. You owe/share: Rs.${(splitAmong.find(s => s.uid === member.uid)?.amount || 0).toFixed(2)}`;
+
+        addNotification({
+          message,
+          title,
+          userId: member.uid,
+          type: 'expense',
+          metadata: {
+            groupId: group._id,
+            expenseId: `exp-${Date.now()}`
+          }
+        });
+      });
     } catch (error) {
       console.error('Error posting expense:', error);
       alert('Failed to add expense.');
@@ -385,10 +405,10 @@ function GroupDetail() {
                 Member Balances
               </Typography>
               <TableContainer>
-                <Table sx={{ minWidth: 650 }}>
+                <Table sx={{ minWidth: 600 }}>
                   <TableHead>
                     <TableRow sx={{ bgcolor: 'background.default' }}>
-                      <TableCell sx={{ fontWeight: 700, fontSize: '1rem', width: '70%' }}>Member</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '1rem', width: '60%' }}>Member</TableCell>
                       {/* <TableCell sx={{ fontWeight: 700, fontSize: '1rem', width: '30%' }} align="right">Balance</TableCell> */}
                     </TableRow>
                   </TableHead>

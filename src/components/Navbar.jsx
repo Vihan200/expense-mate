@@ -155,7 +155,7 @@ const Navbar = ({ user }) => {
             }}>
               {notifications.map((notification, index) => {
                 const title = notification.notification?.title || notification.title || 'Notification';
-                const message = notification.notification?.body || '';
+                const message = notification.notification?.message ||  notification.message || '';
                 const unread = notification.unread !== false;
                 
                 return (

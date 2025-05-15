@@ -4,10 +4,10 @@ import {
   Container, Typography, Grid, Card, CardContent, Button, Dialog,
   DialogTitle, DialogContent, DialogActions, TextField, Stack, Table,
   TableHead, TableRow, TableCell, TableBody, MenuItem, Select,
-  InputLabel, FormControl, Paper, Box
+  InputLabel, FormControl, Paper, Box, Divider, IconButton
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { ArrowBackIos } from '@mui/icons-material';
+import { ArrowBackIos, AddCircle } from '@mui/icons-material';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -30,16 +30,12 @@ function MyBudgetView() {
         const response = await axios.get(`http://localhost:5000/api/budget/user/${User.uid}`);
         const allBudgets = response.data;
 
-        const incomeEntries = allBudgets.filter(entry => entry.type === '+');
-        const expenseEntries = allBudgets.filter(entry => entry.type === '-');
-
-        setIncomes(incomeEntries);
-        setExpenses(expenseEntries);
+        setIncomes(allBudgets.filter(entry => entry.type === '+'));
+        setExpenses(allBudgets.filter(entry => entry.type === '-'));
       } catch (error) {
         console.error('Error fetching budget entries:', error);
       }
     };
-
     fetchBudgets();
   }, [User.uid]);
 
@@ -50,14 +46,10 @@ function MyBudgetView() {
   const groupByCategory = (entries) => {
     const grouped = {};
     entries.forEach(entry => {
-      if (!grouped[entry.category]) grouped[entry.category] = 0;
-      grouped[entry.category] += parseFloat(entry.amount);
+      grouped[entry.category] = (grouped[entry.category] || 0) + parseFloat(entry.amount);
     });
     return Object.entries(grouped).map(([name, value]) => ({ name, value }));
   };
-
-  const incomeData = groupByCategory(incomes);
-  const expenseData = groupByCategory(expenses);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28CF1', '#E86A92'];
 
@@ -71,7 +63,7 @@ function MyBudgetView() {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            // label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
             outerRadius={100}
             dataKey="value"
           >
@@ -86,111 +78,71 @@ function MyBudgetView() {
     </Box>
   );
 
-  const handleAddIncome = async () => {
+  const handleSubmit = async (form, type, setter) => {
     try {
-      const BudgetData = {
-        amount: incomeForm.amount,
-        category: incomeForm.category,
+      const response = await axios.post(`${process.env.api_url}/api/budget`, {
+        ...form,
         user: User.uid,
-        description: incomeForm.description,
-        date: incomeForm.date,
-        type: '+'
-      };
-      const response = await axios.post('http://localhost:5000/api/budget', BudgetData);
+        type
+      });
       if (response.status === 200) {
-        alert('Income Added successfully!');
+        alert(`${type === '+' ? 'Income' : 'Expense'} Added successfully!`);
         navigate(0);
       }
     } catch (error) {
-      console.error('Error creating income:', error);
+      console.error('Error creating entry:', error);
     }
-    setIncomeForm({ amount: '', category: '', description: '', date: '' });
-    setIncomeDialog(false);
-  };
-
-  const handleAddExpense = async () => {
-    try {
-      const BudgetData = {
-        amount: expenseForm.amount,
-        category: expenseForm.category,
-        user: User.uid,
-        description: expenseForm.description,
-        date: expenseForm.date,
-        type: '-'
-      };
-      const response = await axios.post('http://localhost:5000/api/budget', BudgetData);
-      if (response.status === 200) {
-        alert('Expense Added successfully!');
-        navigate(0);
-      }
-    } catch (error) {
-      console.error('Error creating expense:', error);
-    }
-    setExpenseForm({ amount: '', category: '', description: '', date: '' });
-    setExpenseDialog(false);
+    setter({ amount: '', category: '', description: '', date: '' });
+    (type === '+' ? setIncomeDialog : setExpenseDialog)(false);
   };
 
   return (
     <>
-      <Navbar user={{ name: 'Dul' }} />
+      <Navbar user={User} />
       <Container maxWidth="xl" sx={{ mt: 6, mb: 6 }}>
-        <Stack direction="row" alignItems="center" spacing={2} mb={5}>
-          <Button variant="text" onClick={() => navigate("/dashboard")} sx={{ color: 'primary.main', minWidth: 0 }}>
+        <Stack direction="row" alignItems="center" spacing={2} mb={4}>
+          <IconButton onClick={() => navigate("/dashboard")} color="primary">
             <ArrowBackIos fontSize="small" />
-          </Button>
+          </IconButton>
           <Typography variant="h3" fontWeight={700}>My Budget</Typography>
         </Stack>
 
-        <Grid container spacing={4} mb={5}>
-          {[{
-            title: 'Total Income', value: totalIncome, color: 'success.main'
-          }, {
-            title: 'Total Expenses', value: totalExpense, color: 'error.main'
-          }, {
-            title: 'Balance', value: balance, color: balance >= 0 ? 'success.main' : 'error.main'
-          }].map((item, index) => (
-            <Grid item xs={12} md={4} key={index}>
+        <Grid container spacing={4} mb={4} justifyContent="center">
+          {[{ title: 'Total Income', value: totalIncome, color: 'success.main' },
+            { title: 'Total Expenses', value: totalExpense, color: 'error.main' },
+            { title: 'Balance', value: balance, color: balance >= 0 ? 'success.main' : 'error.main' }].map((item, i) => (
+            <Grid item xs={12} md={4} key={i}>
               <Card variant="outlined" sx={{ borderRadius: 4, boxShadow: 3 }}>
-                <CardContent sx={{ textAlign: 'left' }}>
+                <CardContent>
                   <Typography color="text.secondary" fontWeight={600} variant="h6">{item.title}</Typography>
-                  <Typography variant="h4" fontWeight={700} color={item.color}>
-                    Rs. {item.value.toLocaleString()}
-                  </Typography>
+                  <Typography variant="h4" fontWeight={700} color={item.color}>Rs. {item.value.toLocaleString()}</Typography>
                 </CardContent>
               </Card>
             </Grid>
           ))}
-          <Grid container spacing={4} mb={6}>
-          <Grid item xs={12} md={6}>
-            <Paper variant="outlined" sx={{ p: 4, borderRadius: 4 }}>
-              {renderPieChart(incomeData, 'Income by Category')}
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Paper variant="outlined" sx={{ p: 4, borderRadius: 4 }}>
-              {renderPieChart(expenseData, 'Expense by Category')}
-            </Paper>
-          </Grid>
         </Grid>
-        </Grid>
-       
-        
 
-        <Box display="flex" gap={3} mb={6}>
-          <Button variant="contained" color="primary" size="large" onClick={() => setIncomeDialog(true)}>
+        <Grid container spacing={4} mb={6} justifyContent="center">
+          <Grid item xs={12} md={6}>{renderPieChart(groupByCategory(incomes), 'Income by Category')}</Grid>
+          <Grid item xs={12} md={6}>{renderPieChart(groupByCategory(expenses), 'Expense by Category')}</Grid>
+        </Grid>
+
+        <Stack direction="row" spacing={3} mb={5} justifyContent="center">
+          <Button variant="contained" color="primary" startIcon={<AddCircle />} onClick={() => setIncomeDialog(true)}>
             Add Income
           </Button>
-          <Button variant="contained" color="secondary" size="large" onClick={() => setExpenseDialog(true)}>
+          <Button variant="contained" color="secondary" startIcon={<AddCircle />} onClick={() => setExpenseDialog(true)}>
             Add Expense
           </Button>
-        </Box>
+        </Stack>
 
-        <Grid container spacing={6}>
-          {[{ title: 'Incomes', rows: incomes }, { title: 'Expenses', rows: expenses }].map((section, idx) => (
-            <Grid item xs={12} md={6} key={idx}>
+        <Grid container spacing={6}  justifyContent="center">
+          {[{ title: 'Incomes', rows: incomes }, { title: 'Expenses', rows: expenses }].map((section, i) => (
+            <Grid item xs={12} md={6} key={i}>
               <Paper variant="outlined" sx={{ borderRadius: 4, boxShadow: 2 }}>
                 <Box p={4}>
                   <Typography variant="h5" fontWeight={700} mb={3}>{section.title}</Typography>
+                  <Divider sx={{ mb: 2 }} />
                   <Table size="medium">
                     <TableHead>
                       <TableRow>
@@ -201,15 +153,14 @@ function MyBudgetView() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {section.rows.map((row, i) => (
-                        <TableRow key={i}>
+                      {section.rows.length ? section.rows.map((row, idx) => (
+                        <TableRow key={idx} hover>
                           <TableCell>Rs. {parseFloat(row.amount).toLocaleString()}</TableCell>
                           <TableCell>{row.category}</TableCell>
                           <TableCell>{row.description}</TableCell>
                           <TableCell>{row.date}</TableCell>
                         </TableRow>
-                      ))}
-                      {section.rows.length === 0 && (
+                      )) : (
                         <TableRow>
                           <TableCell colSpan={4} align="center" sx={{ py: 4, color: 'text.secondary' }}>
                             No {section.title.toLowerCase()} added.
@@ -226,12 +177,12 @@ function MyBudgetView() {
 
         {[{
           title: 'Add Income', state: incomeDialog, setter: setIncomeDialog, form: incomeForm, setForm: setIncomeForm,
-          fields: ['Salary', 'Freelance', 'Profit', 'Other'], onSubmit: handleAddIncome
+          fields: ['Salary', 'Freelance', 'Profit', 'Other'], type: '+'
         }, {
           title: 'Add Expense', state: expenseDialog, setter: setExpenseDialog, form: expenseForm, setForm: setExpenseForm,
-          fields: ['Food', 'Transport', 'Rent', 'Vehicle', 'Entertainment', 'Other'], onSubmit: handleAddExpense
-        }].map((dialog, idx) => (
-          <Dialog open={dialog.state} onClose={() => dialog.setter(false)} fullWidth maxWidth="sm" key={idx}>
+          fields: ['Food', 'Transport', 'Rent', 'Vehicle', 'Entertainment', 'Other'], type: '-'
+        }].map((dialog, i) => (
+          <Dialog justifyContent="center" open={dialog.state} onClose={() => dialog.setter(false)} fullWidth maxWidth="sm" key={i}>
             <DialogTitle>{dialog.title}</DialogTitle>
             <DialogContent>
               <Stack spacing={3} mt={1}>
@@ -249,8 +200,8 @@ function MyBudgetView() {
                     onChange={(e) => dialog.setForm({ ...dialog.form, category: e.target.value })}
                     label="Category"
                   >
-                    {dialog.fields.map((option, i) => (
-                      <MenuItem key={i} value={option}>{option}</MenuItem>
+                    {dialog.fields.map((option, j) => (
+                      <MenuItem key={j} value={option}>{option}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -272,7 +223,7 @@ function MyBudgetView() {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => dialog.setter(false)}>Cancel</Button>
-              <Button onClick={dialog.onSubmit} variant="contained">Add</Button>
+              <Button variant="contained" onClick={() => handleSubmit(dialog.form, dialog.type, dialog.setForm)}>Add</Button>
             </DialogActions>
           </Dialog>
         ))}

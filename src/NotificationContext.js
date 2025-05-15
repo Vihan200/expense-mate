@@ -1,21 +1,31 @@
 import { createContext, useState, useEffect, useContext } from "react";
 
 const NotificationContext = createContext();
+const User = { uid: localStorage.getItem("email"), name: localStorage.getItem("displayName") };
 
 export const NotificationProvider = ({ children }) => {
   // Load notifications from localStorage on initial render
   const [notifications, setNotifications] = useState(() => {
     try {
+
       const savedNotifications = localStorage.getItem('notifications');
-      return savedNotifications ? JSON.parse(savedNotifications) : [];
+      if (!savedNotifications) return [];
+
+      const allNotifications = JSON.parse(savedNotifications);
+      const myNotifications = allNotifications.filter(n => n.userId === User.uid);
+
+      return myNotifications;
     } catch (error) {
       console.error('Failed to parse notifications from localStorage', error);
       return [];
     }
+
   });
 
   // Save notifications to localStorage whenever they change
   useEffect(() => {
+
+
     localStorage.setItem('notifications', JSON.stringify(notifications));
   }, [notifications]);
 
@@ -23,7 +33,8 @@ export const NotificationProvider = ({ children }) => {
     setNotifications((prev) => {
       const newNotification = {
         id: Date.now(),
-        message: notification.message || notification.notification?.title || "New notification",
+         title: notification.title || "New Notification",
+      message: notification.message || "No message provided.",
         time: new Date().toISOString(),
         unread: true,
         ...notification
@@ -34,7 +45,7 @@ export const NotificationProvider = ({ children }) => {
 
   const markAsRead = (id) => {
     setNotifications(prev =>
-      prev.map(n => 
+      prev.map(n =>
         n.id === id ? { ...n, unread: false } : n
       )
     );
@@ -55,8 +66,8 @@ export const NotificationProvider = ({ children }) => {
     const cleanupOldNotifications = () => {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
-      setNotifications(prev => 
+
+      setNotifications(prev =>
         prev.filter(notification => {
           const notificationDate = new Date(notification.time);
           return notificationDate > oneWeekAgo;
@@ -71,9 +82,9 @@ export const NotificationProvider = ({ children }) => {
 
   return (
     <NotificationContext.Provider
-      value={{ 
-        notifications, 
-        addNotification, 
+      value={{
+        notifications,
+        addNotification,
         clearNotifications,
         markAsRead,
         markAllAsRead,

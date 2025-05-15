@@ -56,7 +56,7 @@ function GroupCard({ group, currentUser }) {
       };
 
       const response = await axios.put(
-        `http://localhost:5000/api/groups/image/${group._id}`,
+        `${process.env.api_url}/api/groups/image/${group._id}`,
         groupData // Send the image URL in the body
       );
 

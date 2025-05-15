@@ -22,7 +22,7 @@ function Login() {
 
       // Send token to the backend for verification
       const response = await axios.post(
-        "http://localhost:5000/api/verify-token",
+        `${process.env.api_url}/api/verify-token`,
         { token }
       );
 
@@ -42,7 +42,7 @@ function Login() {
   const sendTokenToBackend = async (token) => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/notifications/store-token",
+        `${process.env.api_url}/api/notifications/store-token`,
         { token }
       );
     } catch (error) {
