@@ -87,7 +87,7 @@ function MyBudgetView() {
       });
       if (response.status === 200) {
         alert(`${type === '+' ? 'Income' : 'Expense'} Added successfully!`);
-        navigate(0);
+        window.location.reload();
       }
     } catch (error) {
       console.error('Error creating entry:', error);

@@ -242,7 +242,7 @@ function GroupDetail() {
     setPaidBy('');
     setParticipants([]);
     setOpenAddExpense(false);
-    navigate(0);
+    window.location.reload();
   };
 
 
