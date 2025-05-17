@@ -600,7 +600,7 @@ function GroupDetail() {
           </Grid>
 
           {/* Expense List */}
-          <Grid item xs={12} md={6} lg={6} sx={{ maxHeight: "600px" }}>
+          <Grid item xs={12} md={6} lg={6} sx={{ maxHeight: "600px", maxWidth: '750px'}}>
             <Paper
               variant="outlined"
               sx={{ borderRadius: 4, boxShadow: 1, height: "100%" }}
