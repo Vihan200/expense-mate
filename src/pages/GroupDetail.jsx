@@ -148,7 +148,7 @@ function GroupDetail() {
 
     try {
       const response = await axios.put(
-        `http://localhost:5000/api/groups/addMember/${id}`,
+        `${process.env.REACT_APP_API_URL}/api/groups/addMember/${id}`,
         { members: newMemberEmail }
       );
 
